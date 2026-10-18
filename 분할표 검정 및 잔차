@@ -1,0 +1,32 @@
+## 분할표 만들기
+data<-matrix(c(2,4,13,3,2,6,22,4,0,1,15,8,0,3,13,8),ncol=4,byrow=TRUE,
+  dimnames=list(소득구간=c('~5000','5000~15000','15000~25000','25000~'),직업만족도=c('매우불만족','약간만족','적절히만족','매우만족')))
+data
+
+data2<- array(c(6,2,4,8,4,1,3,5,5,3,3,6),dim=c(2,2,3),dimnames=list(집단=c('약','위약'),반응=c('성공','실패'),병원=c('병원1','병원2','병원3')))
+data2_frame<-as.data.frame.table(data2)
+data2_frame
+
+
+##카이제곱 검정
+chisq.test(data)
+
+##표준화잔차
+library(vcd)
+
+str_data<-chisq.test(data)$stdres
+
+##CMH test
+library(vcdExtra)
+CMHtest(data,rscores=c(3,10,20,35),cscores=c(1,3,4,5))
+
+
+##fisher 정확검정
+fisher.test(data2)
+
+##중간 p값 구하기
+ormidp.test(21,2,15,3,or=1)
+
+##Breslowdaytest
+library(DescTools)
+BreslowDayTest(data2)
