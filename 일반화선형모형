@@ -1,0 +1,42 @@
+## 항등연결함수
+fit<-glm(y~weight,family=quasi(link=identity),data=crabs1)
+summary(fit)
+
+##로지스틱함수
+fit_logit<-glm(y~weight,family=binomial,data=crabs1)
+summary(fit_logit)
+
+##포아송 로그 연결함수
+fit_crab<-glm(sat~weight,family=poisson(link=log),data=crabs)
+##가능도비 신뢰구간
+  confit(fit_6) ## 프로파일 가능도비
+  confint.default(fit_6) ##왈드
+
+##왈드검정
+library(aod)
+wald.test(b=coef(fit_6),Sigma=vcov(fit_6),Terms=2)
+
+##가능도비검정
+library(car)
+Anova(fit_6)
+
+##모델검정
+anova(fit_infection3,fit_infection2,test="LRT")
+
+##회귀모형 R 상관계수
+cor(sorethroat$Y,fitted(fit_throat))
+cor(sorethroat$Y,fitted(fit_throat2))
+
+## 삼차원 분할표 펼치기
+library(tidyr)
+osteo_ind <- osteosarcoma_2 %>%
+  pivot_longer(c(diseaseFreeYes, diseaseFreeNo),
+               names_to = "diseasefree", values_to = "n") %>%
+  mutate(y = as.integer(diseasefree == "diseaseFreeYes")) %>%  
+  uncount(n) 
+
+## 벌점화 로지스틱 모형
+library(logistf)
+fit_penalized<-logistf(y~lympho+gender+pathology,family=binomial,data=osteo_ind)
+summary(fit_penalized)
+exp(coef(fit_penalized))
