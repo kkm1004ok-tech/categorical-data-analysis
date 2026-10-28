@@ -1,0 +1,188 @@
+---
+title: "데이터분석방법론 2-7"
+output: html_document
+date: "2026-10-13"
+---
+이름: 김기민
+
+학번: 2022685-010016
+<br>
+**4.16**
+<br>
+우선 데이터를 다운 받아 확인한다.
+<br>
+```{r}
+setwd("C:/Users/김기민/Desktop/방통대 통계/데이터분석방법론 2/CDA_3rd data")
+
+sorethroat<-read.table('SoreThroat.dat',header=TRUE,skip=5)
+sorethroat
+str(sorethroat)
+
+```
+<br>
+**a.**
+<br>
+교호작용이 포함된 로지스틱회귀모형을 만든다.
+<br>
+```{r}
+fit_throat<-glm(Y~D+T+D:T,family=binomial,data=sorethroat)
+summary(fit_throat)
+```
+<br>
+적합한 모형식은 다음과 같다.
+<br>
+logit(P(Y=1))= 0.0498+(0.0285)D+(-4.4722)T+(0.0746)(D*T)
+<br>
+T=1 인경우에는 
+<br>
+logit(P(Y=1))= 0.0498+(0.0285)D+(-4.4722)+(0.0746)D
+            = (-4.4224)+(0.1031)D
+<br>            
+T=0 인 경우는
+<br>
+logit(P(Y=1))= 0.0498+(0.0285)D
+<br>
+
+둘이 같아지는 D값을 계산하면 59.9491 이다. 즉 약 수술시간 약 60분 이상부터는 T=1 일때의 로그오즈가 T=0일때보다. 더 커진다고 볼 수 있다.
+
+아울러 교호작용을 포함한 모형식을 가능도비 검정을 통해 확인해보자.
+<br>
+```{r}
+library(car)
+Anova(fit_throat)
+```
+<br>
+교호작용항 가능도비검정통계량은 자유도 1에 1.8169로, p-value 0.1777로 귀무가설을 기각할 수 없다. 따라서 교호작용이 필요하지 않다고 생각할 수 있다. 
+<br>
+**b.**
+<br>
+교호작용이 없는 모델을 fit_throat2로 두자
+<br>
+```{r}
+fit_throat2<-glm(Y~D+T,family=binomial,data=sorethroat)
+summary(fit_throat2)
+```
+<br>
+위 회귀모형에서의 R 상관계수를 구한다.
+<br>
+```{r}
+cor(sorethroat$Y,fitted(fit_throat))
+cor(sorethroat$Y,fitted(fit_throat2))
+```
+<br>
+상관계수 R이 교호작용을 포함했을 때 약 0.6599, 포함하지 않았을 때 약 0.6529 이다.
+상관계수 R이 크게 차이가 없으므로, 예측력에서도 큰 차이가 없으며, 따라서 좀 더 간단한 모형인 fit_throat2를 선택할 수 있다.
+<br>
+**5.14**
+<br>
+문제에 주어진 osteosarcoma 데이터를 다운받는다.
+```{r}
+data("osteosarcoma", package='syllogi')
+osteosarcoma
+```
+<br>
+
+데이터 structure을 확인한다.
+<br>
+```{r}
+str(osteosarcoma)
+```
+<br>
+lymphocytininfiltration,gender,osteoblasticpathology 세가지 변수가 character로 되어있어, factor로 변경한다.
+아울러, 변수명이 너무 길어 변수명도 변경한다.
+<br>
+```{r}
+library(dplyr)
+osteosarcoma_2<-osteosarcoma %>% rename(lympho=lymphocyticInfiltration,pathology=osteoblasticPathology) %>%
+  mutate_at(vars(lympho,gender,pathology),as.factor)
+```
+<br>
+```{r}
+str(osteosarcoma_2
+    )
+```
+<br>
+다시 확인했을때 factor로 바뀌고, 변수명이 바뀌어 있는걸 확인할 수 있다.
+<br>
+**a.**
+<br>
+문제에서 언급한대로 예측변수 하나씩만 골라서 모델을 만든다.
+<br>
+아래는 lymphocyte을 단일 예측변수로 둔 모델이다.
+<br>
+```{r}
+fit_lympho<-glm(diseaseFreeYes/(diseaseFreeYes+diseaseFreeNo)~lympho,weight=diseaseFreeYes+diseaseFreeNo,family=binomial,data=osteosarcoma_2 )
+summary(fit_lympho)
+Anova(fit_lympho)
+```
+<br>
+다음은 gender를 단일 예측변수로 둔 모델이다.
+<br>
+```{r}
+fit_gender<-glm(diseaseFreeYes/(diseaseFreeYes+diseaseFreeNo)~gender,weight=diseaseFreeYes+diseaseFreeNo,family=binomial,data=osteosarcoma_2 )
+summary(fit_gender)
+Anova(fit_gender)
+```
+<br>
+마지막은 pathology를 변수로 둔 모델이다.
+```{r}
+fit_pathology<-glm(diseaseFreeYes/(diseaseFreeYes+diseaseFreeNo)~pathology,weight=diseaseFreeYes+diseaseFreeNo,family=binomial,data=osteosarcoma_2 )
+summary(fit_pathology)
+Anova(fit_pathology)
+```
+<br>
+세모델에서 가능도비 검정을 했을때 모두 유의하게 나옴을 알 수 있다. 다만, summary 함수에서 나온 wald 검정에서는 lymphocyte에서 유의하지 않음을 볼 수 있다. 이는 표준편차가 발산하면서 계수추정값보다 훨씬 빠르게 커지기 때문에 wald 통계량은 여기서 의미가 없다.
+<br>
+이제 세가지 변수를 모두 포함한 모델을 적합해보자.
+<br>
+```{r}
+fit_all<-glm(diseaseFreeYes/(diseaseFreeYes+diseaseFreeNo)~lympho+gender+pathology,weight=diseaseFreeYes+diseaseFreeNo,family=binomial,data=osteosarcoma_2 )
+summary(fit_all)
+Anova(fit_all)
+```
+<br>
+위 모델에서의 계수의 신뢰범위를 구하면
+<br>
+```{r}
+confint(fit_all)
+exp(confint(fit_all))
+```
+<br>
+lymphocyte에서의 신뢰구간이 제대로 작동하지 않음을 알 수 있다.
+이는 희소한 데이터이기 때문이다.
+<br>
+데이터에 칸도수가 0인 칸이 4개나 존재하며, 이는 림프구 침윤의 '높음'에만 집중되어 있기 때문에, 림프구 변수에서 문제가 생긴것이다.
+따라서 림프구 침윤의 경우에는 ML 추정값이 무한대가 될 수 있겠다.
+
+아울러, Anova 검정 결과에서는 lymphocyte에 대한 효과만 검정통계량 6.91, p-value=0.009로 유의하고, gender와 pathology에서는 유의하지 않게 나온다.
+<br>
+**b.**
+<br>
+분할표 자료를 환자 한명씩 나열되어있는 데이터로 만든다.
+<br>
+```{r}
+library(tidyr)
+osteo_ind <- osteosarcoma_2 %>%
+  pivot_longer(c(diseaseFreeYes, diseaseFreeNo),
+               names_to = "diseasefree", values_to = "n") %>%
+  mutate(y = as.integer(diseasefree == "diseaseFreeYes")) %>%  
+  uncount(n) 
+```
+<br>
+logistf를 이용하여 벌점화 로지스틱 모형을 적합한다.
+<br>
+```{r}
+library(logistf)
+fit_penalized<-logistf(y~lympho+gender+pathology,family=binomial,data=osteo_ind)
+summary(fit_penalized)
+exp(coef(fit_penalized))
+
+```
+<br>
+
+
+이전 모델에서는 매우크게 나오고 무한대였던 lymphocyte계수의 신뢰구간이 -7.3626~-0.1887 사이로 유한하게 계산되었음을 확인할 수 있다. 오즈비로 확인하면 림프구침윤이 낮은 환자의 오즈는 높은환자보다 약 0.0853배임을 알 수 있다.
+
+gender와 pathology는 fit_all에서의 ML 추정값과 비교하였을때 크게 달라지지 않았음을 알 수 있다. 하지만 두변수 모두 신뢰구간 0을 포함하고, p-value 0.05이상으로 5% 유의수준에서 유의하지 않음을 알 수 있다.
+
+따라서 벌점화 로지스틱 회귀모델을 사용했을 시 세가지 변수 중 가장 유의미한 설명변수는 림프구침윤이다
